@@ -17,9 +17,13 @@ with sync_playwright() as p:
     page.goto(URL)
     content = page.content()
     page.wait_for_timeout(500)
-    locator = page.locator('node-text.mark-bold')
-    text = locator.text_content()
-    print(text)
+    locators = page.locator("a.bkk_p").all()
+    for locator in locators:
+        print("="*50)
+        print(locator.locator("text-content").inner_text())
+        print("https://v5.animelib.org" + locator.get_attribute("href"))
+        
+    
 
     browser.close()
     
