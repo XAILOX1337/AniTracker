@@ -2,6 +2,7 @@ import playwright,os
 import bs4
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
+from urllib.parse import urljoin 
 
 load_dotenv()
 
@@ -16,12 +17,16 @@ with sync_playwright() as p:
     page = browser.new_page()
     page.goto(URL)
     content = page.content()
-    page.wait_for_timeout(500)
-    locators = page.locator("a.bkk_p").all()
+    page.wait_for_selector("div.fade-2")
+    locators = page.locator("div.fade-2").all()
+    # Перебор всех div'ов с ссылками на "уведомляемые" тайтлы
     for locator in locators:
         print("="*50)
-        print(locator.locator("text-content").inner_text())
-        print("https://v5.animelib.org" + locator.get_attribute("href"))
+        print(locator.locator("a").inner_text())
+        # Поиск тега "a", в котором есть ссылка 
+        href = locator.locator("a").get_attribute("href")
+        # Склейка ссылки для избежания ошибок с "+"
+        print(urljoin("https://v5.animelib.org", href)) 
         
     
 
