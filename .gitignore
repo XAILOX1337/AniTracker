@@ -3,3 +3,6 @@
 .pytest_cache/
 __pycache__/
 temp/
+anitracker.db
+anitracker.log
+anitracker.lock
