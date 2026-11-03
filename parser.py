@@ -92,7 +92,7 @@ def _extract_notification(div_text: str, href: str | None) -> Notification:
 def parse_notifications(url: str, user_data_dir: str) -> list[Notification]:
     """Открывает страницу уведомлений и возвращает список уведомлений."""
     with sync_playwright() as p:
-        browser = p.chromium.launch_persistent_context(user_data_dir, headless=False)
+        browser = p.chromium.launch_persistent_context(user_data_dir, headless=True)
         try:
             page = browser.new_page()
             page.goto(url)
