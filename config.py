@@ -14,6 +14,9 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///anitracker.db")
 # Telegram-рассылка 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+# Прокси для Bot API, если api.telegram.org недоступен напрямую,
+# например socks5://127.0.0.1:1080 (пусто — без прокси)
+TELEGRAM_PROXY = os.getenv("TELEGRAM_PROXY", "")
 
 # Как часто проверять уведомления (минуты)
 CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", "30"))

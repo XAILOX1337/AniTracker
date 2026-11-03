@@ -2,6 +2,8 @@ import asyncio
 import logging
 
 from telegram import Bot
+from telegram.error import TelegramError
+from telegram.request import HTTPXRequest
 
 import config
 from db.models import Episode
@@ -20,18 +22,44 @@ def format_message(episode: Episode) -> str:
     return " ".join(parts)
 
 
-def send_episode_notifications(episodes: list[Episode]) -> None:
-    """Отправляет уведомления; без токена — только логирует."""
-    messages = [format_message(e) for e in episodes]
+def _build_bot() -> Bot:
+    if config.TELEGRAM_PROXY:
+        # Например, socks5://127.0.0.1:1080 — если api.telegram.org
+        # недоступен напрямую из сети
+        return Bot(
+            token=config.TELEGRAM_BOT_TOKEN,
+            request=HTTPXRequest(proxy=config.TELEGRAM_PROXY),
+        )
+    return Bot(token=config.TELEGRAM_BOT_TOKEN)
+
+
+def send_episode_notifications(episodes: list[Episode]) -> list[Episode]:
+    """Отправляет уведомления поштучно.
+
+    Возвращает эпизоды, доставленные успешно (только их можно помечать
+    notified_at); без токена или при сбоях сети — пустой список.
+    """
     if not config.TELEGRAM_BOT_TOKEN or not config.TELEGRAM_CHAT_ID:
-        for text in messages:
-            log.warning("Telegram не настроен, уведомление не отправлено: %s", text)
-        return
+        for episode in episodes:
+            log.warning("Telegram не настроен: %s", format_message(episode))
+        return []
 
-    async def _send() -> None:
-        bot = Bot(token=config.TELEGRAM_BOT_TOKEN)
-        for text in messages:
-            await bot.send_message(chat_id=config.TELEGRAM_CHAT_ID, text=text)
+    async def _send() -> list[Episode]:
+        bot = _build_bot()
+        sent: list[Episode] = []
+        for episode in episodes:
+            try:
+                await bot.send_message(
+                    chat_id=config.TELEGRAM_CHAT_ID,
+                    text=format_message(episode),
+                )
+                sent.append(episode)
+            except TelegramError as exc:
+                # Сбой сети/API не должен ронять весь прогон:
+                # эпизод остаётся в очереди (notified_at IS NULL) и будет
+                # отправлен повторно на следующей проверке
+                log.warning("Уведомление не доставлено (%s): %s",
+                            exc, format_message(episode))
+        return sent
 
-    asyncio.run(_send())
-    log.info("Отправлено уведомлений: %d", len(messages))
+    return asyncio.run(_send())

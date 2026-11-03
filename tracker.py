@@ -23,5 +23,12 @@ def check_once(url: str, user_data_dir: str) -> None:
         if not to_notify:
             log.info("Новых серий нет")
             return
-        send_episode_notifications(to_notify)
-        mark_notified(session, to_notify)
+        sent = send_episode_notifications(to_notify)
+        if sent:
+            mark_notified(session, sent)
+            log.info("Доставлено уведомлений: %d из %d", len(sent), len(to_notify))
+        else:
+            log.warning(
+                "Ни одно уведомление не доставлено; %d эпизодов останутся в очереди",
+                len(to_notify),
+            )
